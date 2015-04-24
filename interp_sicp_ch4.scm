@@ -36,13 +36,14 @@
         ((assignment? exp) (eval-assignment exp env))
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
-        ((lambda? exp)
-         (make-procedure (lambda-parameters exp)
-                         (lambda-body exp)
-                         env))
+        ((lambda? exp)                                         ; make closure
+         (make-procedure (lambda-parameters exp)               ; params
+                         (lambda-body exp)                     ; body
+                         env))                                 ; env
         ((begin? exp) 
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval-interp (cond->if exp) env))
+        ((let? exp) (eval-interp (let->lambda exp) env))
         ((application? exp)
          (apply-interp (eval-interp (operator exp) env)
                 (list-of-values (operands exp) env)))
@@ -91,6 +92,24 @@
                     (eval-interp (definition-value exp) env)
                     env)
   'ok)
+
+;; exercise 4.6
+
+(define (let? exp)
+  (tagged-list? exp 'let))
+
+(define (let-var-and-exp exp)
+  (cadr exp))
+
+(define (let-body exp)
+  (cddr exp))
+
+(define (let->lambda exp)
+  (let ((var-and-exp-list (let-var-and-exp exp))
+        (body (let-body exp)))
+        (let ((var-list (map car var-and-exp-list))
+              (exp-list (map cadr var-and-exp-list)))
+            (cons (make-lambda var-list body) exp-list))))  
 
 ;;;SECTION 4.1.2
 
