@@ -1,6 +1,5 @@
 #lang scheme
 (require r5rs)
-;(require (planet dyoo/simply-scheme:2:2))
 
 ;; libs
 ;(define-syntax-rule (set-car! lst val)
@@ -277,7 +276,7 @@
   (define (env-loop env)
     (define (scan vars vals)
       (cond ((null? vars)
-             (env-loop (enclosing-environment env)))
+             (env-loop (enclosing-environment env)))     ; find in outer env
             ((eq? var (car vars))
              (car vals))
             (else (scan (cdr vars) (cdr vals)))))
