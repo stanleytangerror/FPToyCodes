@@ -20,6 +20,18 @@
   (syntax-rules ()
     [(_ x y) (cons x (delay y))]))
 
+;(define-syntax delay-c
+;  (syntax-rules ()
+;    [(_ x) (lambda () (x))]))
+
+;(define-syntax force-c
+;  (syntax-rules ()
+;    [(_ x) (x)]))
+
+;(define (delay-c val) (lambda () (val)))
+
+;(define (force-c val) (val))
+
 (define the-empty-stream '())
 
 (define stream-null? null?)
@@ -30,21 +42,15 @@
 (define (stream-cdr stream)
 	(force (cdr stream)))
 
-;(define (cons-stream x y)
-;	(cons x (delay y)))
-
-;; (define-values (force) (lambda (val) (val)))
-
-;; (define-values (delay) (lambda (val) (lambda () (val))))
 
 (define (stream-ref s n)
   (if (= n 0) (stream-car s)
       (stream-ref (stream-cdr s) (- n 1))))
 
-(define (stream-map proc s)
-  (if (stream-null? s) the-empty-stream
-      (cons-stream (proc (stream-car s))
-                   (stream-map proc (stream-cdr s)))))
+(define (stream-map proc . s)
+  (if (stream-null? (car s)) the-empty-stream
+      (cons-stream (apply proc (map stream-car s))
+                   (apply stream-map (cons proc (map stream-cdr s))))))
 
 (define (stream-for-each proc s)
   (if (stream-null? s) 'done
@@ -66,10 +72,10 @@
   (= (smallest-division x 0) x))
 
 (define (list-stream . e)
-  (define (helper lst)
-    (if (null? lst) the-empty-stream
-        (cons-stream (car lst) (helper (cdr lst)))))
-  (helper e))
+    (if (null? e) the-empty-stream
+        (cons-stream (car e) 
+                     ((lambda () (cons list-stream (cdr e))) '()))))   ; this line matters
+
 
 (define (integers-starting-from n)
   (cons-stream n (integers-starting-from (+ n 1))))
@@ -79,6 +85,9 @@
         ((pred (stream-car stream)) (stream-car stream))
         (else (retrieve pred (stream-cdr stream)))))
 
-(retrieve (lambda (x) (> x 1000)) (integers-starting-from 1))
+(stream-cdr (cons-stream 1 2))
+
+(retrieve (lambda (x) (> x 1000))
+          (stream-map + (integers-starting-from 1) (integers-starting-from 2)))
 
 ;(stream-filter prime? (list-stream 1 2 3 4 5 6))
