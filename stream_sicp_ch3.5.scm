@@ -20,18 +20,6 @@
   (syntax-rules ()
     [(_ x y) (cons x (delay y))]))
 
-;(define-syntax delay-c
-;  (syntax-rules ()
-;    [(_ x) (lambda () (x))]))
-
-;(define-syntax force-c
-;  (syntax-rules ()
-;    [(_ x) (x)]))
-
-;(define (delay-c val) (lambda () (val)))
-
-;(define (force-c val) (val))
-
 (define the-empty-stream '())
 
 (define stream-null? null?)
@@ -65,7 +53,23 @@
         (else (stream-filter pred (stream-cdr stream)))))
 
 (define (display-stream stream)
-  (stream-for-each (lambda (e) (display e) (newline)) stream))
+  (stream-for-each (lambda (e) (display e) (display " ")) stream))
+
+(define (list-stream . e)
+    (if (null? e) the-empty-stream
+        (cons-stream (car e) 
+                     (apply list-stream (cdr e)))))   ; this line matters
+
+(define (sub-stream stream from to)
+  (define (helper stream n)
+    (cond [(and (>= n from) (< n to))
+           (cons-stream (stream-car stream)
+                        (helper (stream-cdr stream) (+ n 1)))]
+          [(< n to) (helper (stream-cdr stream) (+ n 1))]
+          [else '()]))
+  (helper stream 0))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (prime? x)
   (define (smallest-division x n)
@@ -74,11 +78,7 @@
           (else (smallest-division x (+ n 1)))))
   (= (smallest-division x 2) x))
 
-(define (list-stream . e)
-    (if (null? e) the-empty-stream
-        (cons-stream (car e) 
-                     (apply list-stream (cdr e)))))   ; this line matters
-
+(display-stream (stream-filter prime? (list-stream 1 2 3 4 5 6)))
 
 (define (integers-starting-from n)
   (cons-stream n (integers-starting-from (+ n 1))))
@@ -88,12 +88,22 @@
         ((pred (stream-car stream)) (stream-car stream))
         (else (retrieve pred (stream-cdr stream)))))
 
-(display-stream (stream-filter prime? (list-stream 1 2 3 4 5 6)))
-
 (stream-cdr (cons-stream 1 2))
 
 (retrieve (lambda (x) (> x 1000))
           (stream-map + (integers-starting-from 1) (integers-starting-from 2)))
 
 (prime? 2)
+
+(define (fibgen a b)
+  (cons-stream a (fibgen b (+ a b))))
+
+(define fibs (fibgen 0 1))
+
+(display-stream (sub-stream fibs 10 20))
+  
+(display-stream (sub-stream (integers-starting-from 20) 10 20))
+
+
+
 
