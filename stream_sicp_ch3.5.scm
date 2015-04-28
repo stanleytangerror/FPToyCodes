@@ -53,7 +53,7 @@
                    (apply stream-map (cons proc (map stream-cdr s))))))
 
 (define (stream-for-each proc s)
-  (if (stream-null? s) 'done
+  (if (stream-null? s) '()
       (begin (proc (stream-car s))
              (stream-for-each proc (stream-cdr s)))))
 
@@ -64,17 +64,20 @@
                       (stream-filter pred (stream-cdr stream))))
         (else (stream-filter pred (stream-cdr stream)))))
 
+(define (display-stream stream)
+  (stream-for-each (lambda (e) (display e) (newline)) stream))
+
 (define (prime? x)
   (define (smallest-division x n)
-    (cond ((<= x 2) 0)
+    (cond ((<= x 1) 0)
           ((= (modulo x n) 0) n)
           (else (smallest-division x (+ n 1)))))
-  (= (smallest-division x 0) x))
+  (= (smallest-division x 2) x))
 
 (define (list-stream . e)
     (if (null? e) the-empty-stream
         (cons-stream (car e) 
-                     ((lambda () (cons list-stream (cdr e))) '()))))   ; this line matters
+                     (apply list-stream (cdr e)))))   ; this line matters
 
 
 (define (integers-starting-from n)
@@ -85,9 +88,12 @@
         ((pred (stream-car stream)) (stream-car stream))
         (else (retrieve pred (stream-cdr stream)))))
 
+(display-stream (stream-filter prime? (list-stream 1 2 3 4 5 6)))
+
 (stream-cdr (cons-stream 1 2))
 
 (retrieve (lambda (x) (> x 1000))
           (stream-map + (integers-starting-from 1) (integers-starting-from 2)))
 
-;(stream-filter prime? (list-stream 1 2 3 4 5 6))
+(prime? 2)
+
