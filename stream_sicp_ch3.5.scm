@@ -104,6 +104,23 @@
   
 (display-stream (sub-stream (integers-starting-from 20) 10 20))
 
+(define (sieve stream)
+  (cons-stream (stream-car stream)
+               (sieve (stream-filter
+                       (lambda (x)
+                         (not (= (modulo x (stream-car stream)) 0)))
+                       (stream-cdr stream)))))
 
+(define primes (sieve (integers-starting-from 2)))
 
+(display-stream (sub-stream primes 0 10))
 
+(define (add-streams s1 s2)
+  (stream-map + s1 s2))
+
+(define ones (cons-stream 1 ones))
+
+(define integers
+  (cons-stream 1 (add-streams ones integers)))
+
+(display-stream (sub-stream integers 1 20))
