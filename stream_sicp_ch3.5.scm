@@ -16,9 +16,24 @@
     ; no rule
     [(_ exp) (cons exp '())]))
 
+(define (memo-proc proc)
+  (let ((already-run? #f)
+        (result #f))
+    (lambda ()
+      (if already-run? result
+          (begin (set! result (proc))
+                 (set! already-run? #t)
+                 result)))))
+
+(define-syntax-rule (delay-c proc) 
+    (memo-proc (lambda () proc)))
+
+(define-syntax-rule (force-c delayed-object)
+  (delayed-object))
+
 (define-syntax cons-stream
   (syntax-rules ()
-    [(_ x y) (cons x (delay y))]))
+    [(_ x y) (cons x (delay-c y))]))
 
 (define the-empty-stream '())
 
@@ -28,7 +43,7 @@
 	(car stream))
 
 (define (stream-cdr stream)
-	(force (cdr stream)))
+	(force-c (cdr stream)))
 
 
 (define (stream-ref s n)
@@ -95,13 +110,6 @@
 
 (prime? 2)
 
-(define (fibgen a b)
-  (cons-stream a (fibgen b (+ a b))))
-
-(define fibs (fibgen 0 1))
-
-(display-stream (sub-stream fibs 10 20))
-  
 (display-stream (sub-stream (integers-starting-from 20) 10 20))
 
 (define (sieve stream)
@@ -118,9 +126,33 @@
 (define (add-streams s1 s2)
   (stream-map + s1 s2))
 
+(define (multi-streams s1 s2)
+  (stream-map * s1 s2))
+
 (define ones (cons-stream 1 ones))
 
 (define integers
   (cons-stream 1 (add-streams ones integers)))
 
 (display-stream (sub-stream integers 1 20))
+
+(define fibs
+  (cons-stream 0 (cons-stream 1
+                              (add-streams fibs (stream-cdr fibs)))))
+
+(display-stream (sub-stream fibs 10 20))
+
+(define s (cons-stream 1 (add-streams s s)))
+
+(display-stream (sub-stream s 0 10))
+  
+(define factorials
+  (cons-stream 1 (multi-streams (stream-cdr integers) factorials)))
+
+(display-stream (sub-stream factorials 0 10))
+
+(define (expand num den radix)
+  (cons-stream (quotient (* num radix) den)
+               (expand (remainder (* num radix) den) den radix)))
+
+(display-stream (expand 1 7 10))
