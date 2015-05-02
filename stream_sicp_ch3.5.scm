@@ -86,6 +86,11 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define (stream-prf init next)
+  (define seq
+    (cons-stream init (stream-map next seq)))
+  seq)
+
 (define (prime? x)
   (define (smallest-division x n)
     (cond ((<= x 1) 0)
@@ -126,10 +131,22 @@
 (define (add-streams s1 s2)
   (stream-map + s1 s2))
 
+(define (minus-streams s1 s2)
+  (stream-map - s1 s2))
+
 (define (multi-streams s1 s2)
   (stream-map * s1 s2))
 
+(define (div-streams s1 s2)
+  (stream-map / s1 s2))
+
 (define ones (cons-stream 1 ones))
+
+(define (nums n)
+  (define seq (cons-stream n seq))
+  seq)
+
+(display-stream (sub-stream (nums 1.5) 0 10))
 
 (define integers
   (cons-stream 1 (add-streams ones integers)))
@@ -151,8 +168,23 @@
 
 (display-stream (sub-stream factorials 0 10))
 
-(define (expand num den radix)
-  (cons-stream (quotient (* num radix) den)
-               (expand (remainder (* num radix) den) den radix)))
+;;;;;;;;;;;;;;;;;;;;;;;;
 
-(display-stream (expand 1 7 10))
+(define (convergence x depth step)
+  (define guesses
+    (cons-stream x (stream-map step guesses)))
+  (display-stream (sub-stream guesses 0 depth)))
+
+(define (sqrt-improve root depth) (convergence root depth (lambda (x) (/ (+ x (/ root x)) 2))))
+
+(sqrt-improve 2 5)
+
+(define (pi precise)
+  (define pi-terms
+    (div-streams (stream-prf 1 (lambda (x) (* x -1))) (minus-streams (multi-streams (nums 2) integers) ones)))
+  (define pi-sums
+    (cons-stream 1 (add-streams (stream-cdr pi-terms) pi-sums)))
+  (* 4 (stream-ref pi-sums precise)))
+
+(pi 10)
+
