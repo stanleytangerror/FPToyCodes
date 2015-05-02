@@ -188,3 +188,22 @@
 
 (pi 10)
 
+;;;;;;;;;;;;;;;;;;;
+
+(define (pairs s t)
+  (define (interleave s1 s2)                    ; get each element from s and t
+    (if (stream-null? s1) s2
+        (cons-stream (stream-car s1)
+                     (interleave s2 (stream-cdr s1)))))
+  (cons-stream
+   (list (stream-car s) (stream-car t))         ; pair(s[0], t[0])
+   (interleave                                  ; inter-iterate through pairs1, pairs2
+    (stream-map (lambda (x) (list (stream-car s) x))
+                (stream-cdr t))                 ; pairs1: pairs of s[0], t[1:]
+    (pairs (stream-cdr s) (stream-cdr t)))))    ; pairs2: pairs of s[1:], t[1:]
+
+(display-stream 
+ (sub-stream 
+  (pairs (stream-prf 1 (lambda (x) (+ x 2)))
+         (stream-prf 2 (lambda (x) (+ x 2))))
+  0 1000))
