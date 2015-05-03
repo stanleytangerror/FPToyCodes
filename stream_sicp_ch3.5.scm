@@ -137,6 +137,9 @@
 (define (multi-streams s1 s2)
   (stream-map * s1 s2))
 
+(define (scale-stream s factor)
+  (stream-map (lambda (x) (* factor x)) s))
+
 (define (div-streams s1 s2)
   (stream-map / s1 s2))
 
@@ -207,3 +210,15 @@
   (pairs (stream-prf 1 (lambda (x) (+ x 2)))
          (stream-prf 2 (lambda (x) (+ x 2))))
   0 1000))
+
+;;;;;;;;;;;;;;;;;;;;;
+
+(define (integrel integrand initial-value dt)
+  (define sums
+    (cons-stream initial-value
+                 (add-streams (scale-stream integrand dt)
+                             sums)))
+  sums)
+
+(display-stream (sub-stream (integrel (nums 10) 0 1) 0 10))
+
