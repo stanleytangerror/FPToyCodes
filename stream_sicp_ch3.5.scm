@@ -209,7 +209,7 @@
  (sub-stream 
   (pairs (stream-prf 1 (lambda (x) (+ x 2)))
          (stream-prf 2 (lambda (x) (+ x 2))))
-  0 1000))
+  0 10))
 
 ;;;;;;;;;;;;;;;;;;;;;
 
@@ -220,5 +220,41 @@
                              sums)))
   sums)
 
-(display-stream (sub-stream (integrel (nums 10) 0 1) 0 10))
+(define (zero-crossings sense-data)
+  (stream-map sign-change-detector sense-data (cons-stream 0 sense-data)))
 
+(define (sign-change-detector prev next)
+  (cond ((and (< prev 0) (>= next 0)) 1)
+        ((and (>= prev 0) (< next 0)) -1)
+        (else 0)))
+
+(define (make-random-stream k)
+  (cons-stream (- (random k) (/ k 2)) (stream-car (make-random-stream k))))
+
+(display-stream (sub-stream (zero-crossings (make-random-stream 10)) 0 30))
+
+;;;;;;;;;;;;;;;;;;
+
+(define (rand-update prev)
+  (if (= (gcd (random)  (random))) 1 0))
+
+(define random-init (rand-update 10))
+
+(define rand
+  (let ((x random-init))
+    (lambda () (set! x (rand-update x)) x)))
+
+(define random-numbers
+  (cons-stream random-init
+               (stream-map rand-update random-numbers)))
+
+(define (monte-carlo experiment-stream passed failed)  ; input experiment result list [1,0,0,1,1,1,...]
+  (define (next passed failed)                         ; get next probability
+    (cons-stream
+     (/ passed (+ passed failed))
+     (monte-carlo (stream-cdr experiment-stream) passed failed)))
+  (if (stream-car experiment-stream)                   ; adjust passed and failed by experiment result
+      (next (+ passed 1) failed)
+      (next passed (+ failed 1))))
+
+(stream-map (lambda (x) (sqrt (* x 6))) (monte-carlo random-numbers 0 0)) 
