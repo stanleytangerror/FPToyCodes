@@ -229,16 +229,20 @@
         (else 0)))
 
 (define (make-random-stream k)
-  (cons-stream (- (random k) (/ k 2)) (stream-car (make-random-stream k))))
+  (cons-stream (- (random k) (/ k 2)) (make-random-stream k)))
+
+(display-stream (sub-stream (make-random-stream 10) 0 30))
 
 (display-stream (sub-stream (zero-crossings (make-random-stream 10)) 0 30))
 
 ;;;;;;;;;;;;;;;;;;
 
-(define (rand-update prev)
-  (if (= (gcd (random)  (random))) 1 0))
+(define random-range 10000)
 
-(define random-init (rand-update 10))
+(define random-init (random random-range))
+
+(define (rand-update x)
+  (modulo (+ x (random random-range)) random-range))
 
 (define rand
   (let ((x random-init))
@@ -248,7 +252,17 @@
   (cons-stream random-init
                (stream-map rand-update random-numbers)))
 
-(define (monte-carlo experiment-stream passed failed)  ; input experiment result list [1,0,0,1,1,1,...]
+(define (map-successive-pairs f s)
+    (cons-stream (f (stream-car s) (stream-car (stream-cdr s)))
+                 (map-successive-pairs f (stream-cdr s))))
+
+; give a customed test results
+(define cesaro-stream  
+  (map-successive-pairs (lambda (r1 r2) (= (gcd r1 r2) 1))
+                        random-numbers))
+
+
+(define (monte-carlo experiment-stream passed failed)  ; input experiment result list [#t,#f,#f,#t,#t,#t,...]
   (define (next passed failed)                         ; get next probability
     (cons-stream
      (/ passed (+ passed failed))
@@ -257,4 +271,4 @@
       (next (+ passed 1) failed)
       (next passed (+ failed 1))))
 
-(stream-map (lambda (x) (sqrt (* x 6))) (monte-carlo random-numbers 0 0)) 
+(display-stream (sub-stream (stream-map (lambda (x) (if (= x 0) 1 (sqrt (/ 6 x)))) (monte-carlo cesaro-stream 0 0)) 0 100)) 
